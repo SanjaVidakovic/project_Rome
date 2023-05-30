@@ -1,4 +1,4 @@
-# project_base
+# project_Rome
 Prazan projekat sa pratećim bibliotekama koje koristimo na času. 
 
 # Uputstvo
