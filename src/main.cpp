@@ -172,6 +172,10 @@ int main() {
     Model eagleModel("resources/objects/eagle/untitled.obj");
     eagleModel.SetShaderTextureNamePrefix("material.");
 
+    //Rome model
+    Model romeModel("resources/objects/rome/rome-textured.obj");
+    eagleModel.SetShaderTextureNamePrefix("material.");
+
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
     pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
@@ -278,7 +282,7 @@ int main() {
 
         // don't forget to enable shader before setting uniforms
         ourShader.use();
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        pointLight.position = glm::vec3(programState->camera.Front.x,programState->camera.Front.y-0.4f,programState->camera.Front.z+2.0f);
         ourShader.setVec3("pointLight.position", pointLight.position);
         ourShader.setVec3("pointLight.ambient", pointLight.ambient);
         ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
@@ -296,12 +300,26 @@ int main() {
         ourShader.setMat4("view", view);
 
         // render the loaded model
+
+        //Eagle
         glm::mat4 modelE = glm::mat4(1.0f);
-        modelE = glm::translate(modelE,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        modelE = glm::scale(modelE, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+        modelE = glm::translate(modelE,programState->camera.Position +
+                                       glm::vec3(programState->camera.Front.x,
+                                                 programState->camera.Front.y,
+                                                 programState->camera.Front.z ) *3.0f);
+        modelE = glm::rotate(modelE,glm::radians(-programState->camera.Yaw + -90.0f), glm::vec3(0.0f ,1.0f, 0.0f));
+        modelE = glm::scale(modelE, glm::vec3(0.05f));
         ourShader.setMat4("model", modelE);
         eagleModel.Draw(ourShader);
+
+        //render obj
+        glm::mat4 modelR= glm::mat4(1.0f);
+        modelR = glm::translate(modelR,glm::vec3(0.0f,-10.0f,0.0f));
+        modelR = glm::scale(modelR, glm::vec3(20.0f));
+        modelR = glm::rotate(modelR,glm::radians(-90.0f), glm::vec3(1.0f ,0.0f, 0.0f));
+        ourShader.setMat4("model", modelR);
+        romeModel.Draw(ourShader);
+
 
         //______________________________________draw skybox_____________________________________________________
         glDepthFunc(GL_LEQUAL);
@@ -411,6 +429,7 @@ void DrawImGui(ProgramState *programState) {
         ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
         ImGui::End();
     }
+
 
     {
         ImGui::Begin("Camera info");
