@@ -21,6 +21,4 @@ Zlatni orao leti iznad Rima.
 - Advanced lighting
 - Skybox - cubemaps
 
-## Link za modele
-
 # Sanja Vidaković mi19095
