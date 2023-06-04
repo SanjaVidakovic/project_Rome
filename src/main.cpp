@@ -28,7 +28,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 unsigned int loadCubemap(vector<std::string> faces);
 
-
 // settings
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
@@ -159,11 +158,20 @@ int main() {
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+    //face culling
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
+    glFrontFace(GL_CW);
+    //blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // build and compile shaders
     // -------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
+    Shader blendingShader("resources/shaders/2.model_lighting.vs", "resources/shaders/blending.fs");
+
 
 
     // load models
@@ -174,6 +182,10 @@ int main() {
 
     //Rome model
     Model romeModel("resources/objects/rome/rome-textured.obj");
+    eagleModel.SetShaderTextureNamePrefix("material.");
+
+    //Helm model
+    Model helmModel("resources/objects/helm/helm.obj");
     eagleModel.SetShaderTextureNamePrefix("material.");
 
     PointLight& pointLight = programState->pointLight;
@@ -282,8 +294,14 @@ int main() {
 
         // don't forget to enable shader before setting uniforms
         ourShader.use();
-        pointLight.position = glm::vec3(programState->camera.Front.x,programState->camera.Front.y-0.4f,programState->camera.Front.z+2.0f);
-        ourShader.setVec3("pointLight.position", pointLight.position);
+        //pointLight.position = glm::vec3(0.0f,20.0f,0.0f);
+        //dirLight
+        ourShader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+        ourShader.setVec3("dirLight.ambient", glm::vec3(0.6f));
+        ourShader.setVec3("dirLight.diffuse", glm::vec3(0.6f));
+        ourShader.setVec3("dirLight.specular", glm::vec3(0.3));
+
+        ourShader.setVec3("pointLight.position", glm::vec3(5.6f,-12.6f+sin(currentFrame),-30.0f));
         ourShader.setVec3("pointLight.ambient", pointLight.ambient);
         ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
         ourShader.setVec3("pointLight.specular", pointLight.specular);
@@ -299,8 +317,6 @@ int main() {
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        // render the loaded model
-
         //Eagle
         glm::mat4 modelE = glm::mat4(1.0f);
         modelE = glm::translate(modelE,programState->camera.Position +
@@ -312,7 +328,7 @@ int main() {
         ourShader.setMat4("model", modelE);
         eagleModel.Draw(ourShader);
 
-        //render obj
+        //Rome
         glm::mat4 modelR= glm::mat4(1.0f);
         modelR = glm::translate(modelR,glm::vec3(0.0f,-10.0f,0.0f));
         modelR = glm::scale(modelR, glm::vec3(20.0f));
@@ -320,6 +336,34 @@ int main() {
         ourShader.setMat4("model", modelR);
         romeModel.Draw(ourShader);
 
+        //Transparency--------------------------------------------------------------
+        blendingShader.use();
+        //pointLight.position = glm::vec3(0.0f,20.0f,0.0f);
+        //dirLight
+        blendingShader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+        blendingShader.setVec3("dirLight.ambient", glm::vec3(0.6f));
+        blendingShader.setVec3("dirLight.diffuse", glm::vec3(0.6f));
+        blendingShader.setVec3("dirLight.specular", glm::vec3(0.3));
+
+        blendingShader.setVec3("pointLight.position", glm::vec3(5.6f,-12.6f+sin(currentFrame),-30.0f));
+        blendingShader.setVec3("pointLight.ambient", pointLight.ambient);
+        blendingShader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        blendingShader.setVec3("pointLight.specular", pointLight.specular);
+        blendingShader.setFloat("pointLight.constant", pointLight.constant);
+        blendingShader.setFloat("pointLight.linear", pointLight.linear);
+        blendingShader.setFloat("pointLight.quadratic", pointLight.quadratic);
+        blendingShader.setVec3("viewPosition", programState->camera.Position);
+        blendingShader.setFloat("material.shininess", 32.0f);
+
+        blendingShader.setMat4("projection", projection);
+        blendingShader.setMat4("view", view);
+
+        //Helm
+        glm::mat4 modelH= glm::mat4(1.0f);
+        modelH = glm::translate(modelH,glm::vec3(5.6f,-12.6f+sin(currentFrame),-30.0f));
+        modelH = glm::scale(modelH, glm::vec3(0.2f));
+        ourShader.setMat4("model", modelH);
+        helmModel.Draw(blendingShader);
 
         //______________________________________draw skybox_____________________________________________________
         glDepthFunc(GL_LEQUAL);
@@ -337,8 +381,6 @@ int main() {
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
-
-
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -416,20 +458,14 @@ void DrawImGui(ProgramState *programState) {
 
 
     {
-        static float f = 0.0f;
-        ImGui::Begin("Hello window");
-        ImGui::Text("Hello text");
-        ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
-        ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
-        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
-        ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
+        ImGui::Begin("Settings");
+        ImGui::Text("Lights");
 
         ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
         ImGui::End();
     }
-
 
     {
         ImGui::Begin("Camera info");
