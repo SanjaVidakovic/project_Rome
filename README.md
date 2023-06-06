@@ -10,7 +10,7 @@ Zlatni orao leti iznad Rima.
 5. Zaglavlja (h i hpp) fajlovi idu u include
 6. Šejderi idu u folder shaders. `Vertex shader` ima ekstenziju `.vs`, `fragment shader` ima ekstenziju `.fs`
 7. ALT+SHIFT+F10 -> project_base -> run
-8. Sa sledećeg linka folder `objects` objekte i ubaciti ga u folder `resources`. Na istom linku se nalaze i slike i video prezentacija: https://drive.google.com/drive/folders/1MKCzl0sWjJERh31fBg1T21Fd9KR5crIr?usp=sharing
+8. Sa sledećeg linka folder `objects` objekte i ubaciti ga u folder `resources`. Na istom linku se nalaze i slike i video prezentacija: https://drive.google.com/drive/folders/1MKCzl0sWjJERh31fBg1T21Fd9KR5crIr?usp=drive_link
 9. `WASD` - kretanje.
 10. `F1` - imgui.
 
